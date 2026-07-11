@@ -32,11 +32,14 @@ export default function MapView({
   onSelect,
   flyTo,
   hoveredId,
+  me,            // { lat, lng, accuracy } of null
 }) {
   const elRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef(new Map());
   const peekRef = useRef(null);
+  const meRef = useRef(null);      // de blauwe stip
+  const haloRef = useRef(null);    // de nauwkeurigheidscirkel
 
   // kaart eenmalig opzetten
   useEffect(() => {
@@ -97,6 +100,52 @@ export default function MapView({
     if (!flyTo || !mapRef.current) return;
     mapRef.current.flyTo([flyTo.lat, flyTo.lng], flyTo.zoom ?? 14, { duration: 1 });
   }, [flyTo]);
+
+  // ── Blauwe stip: waar ben ik? ───────────────────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // geen locatie (meer): alles opruimen
+    if (!me) {
+      if (meRef.current) { map.removeLayer(meRef.current); meRef.current = null; }
+      if (haloRef.current) { map.removeLayer(haloRef.current); haloRef.current = null; }
+      return;
+    }
+
+    const pos = [me.lat, me.lng];
+
+    // cirkel die de meetonnauwkeurigheid toont (in meters, schaalt met de zoom)
+    if (haloRef.current) {
+      haloRef.current.setLatLng(pos).setRadius(me.accuracy ?? 0);
+    } else {
+      haloRef.current = L.circle(pos, {
+        radius: me.accuracy ?? 0,
+        color: "#1d7fd6",
+        weight: 1,
+        opacity: 0.35,
+        fillColor: "#1d7fd6",
+        fillOpacity: 0.1,
+        interactive: false,
+      }).addTo(map);
+    }
+
+    // de stip zelf
+    if (meRef.current) {
+      meRef.current.setLatLng(pos);
+    } else {
+      meRef.current = L.marker(pos, {
+        icon: L.divIcon({
+          className: "",
+          html: '<div class="me-dot"><span class="me-pulse"></span></div>',
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        }),
+        interactive: false,
+        zIndexOffset: -100,   // onder je eigen plekken
+      }).addTo(map);
+    }
+  }, [me]);
 
   function showPeek(p, tag) {
     const map = mapRef.current;
