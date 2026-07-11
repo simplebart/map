@@ -324,7 +324,7 @@ button.linkish {
 
 /* ── Telefoon ───────────────────────────────────────────────── */
 @media (max-width: 760px) {
-  .app { flex-direction: column-reverse; }
+  .app { flex-direction: column; }
 
   /* kaart bovenaan, vaste hoogte */
   .mapwrap {
@@ -574,4 +574,34 @@ button.linkish {
     bottom: 10px;
     width: auto;
   }
+}
+
+/* ── Blauwe stip: hier ben ik ───────────────────────────────── */
+.me-dot {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #1d7fd6;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 1px rgba(29, 127, 214, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* de ring die naar buiten uitdijt */
+.me-pulse {
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  background: rgba(29, 127, 214, 0.45);
+  animation: mePulse 2s ease-out infinite;
+}
+
+@keyframes mePulse {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  70%  { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .me-pulse { animation: none; opacity: 0; }
 }
