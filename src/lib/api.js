@@ -110,24 +110,40 @@ export async function searchCity(query) {
   return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
 }
 
-// ── Adres zoeken: naam of adres → lijst met locaties ──────────
-// Nominatim is gratis en zonder sleutel. Fair use: ~1 verzoek per seconde,
-// vandaar de pauze tijdens het typen in AddDialog.
+// ── Adres of naam zoeken ──────────────────────────────────────
+// Photon (draait op OpenStreetMap-data) kent ook namen van zaken, niet alleen
+// adressen. Gratis en zonder sleutel, net als Nominatim.
 
 export async function searchAddress(query, limit = 6) {
   const r = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=${limit}&q=${encodeURIComponent(query)}`
+    `https://photon.komoot.io/api/?limit=${limit}&lang=nl&q=${encodeURIComponent(query)}`
   );
-  const rows = await r.json();
-  if (!Array.isArray(rows)) return [];
+  const data = await r.json();
+  const rows = data?.features ?? [];
 
-  return rows.map((row) => {
-    const parts = String(row.display_name).split(",").map((s) => s.trim());
-    return {
-      lat: parseFloat(row.lat),
-      lng: parseFloat(row.lon),
-      label: parts[0],                       // "Le Baratin" of "Oudegracht 12"
-      address: parts.slice(1, 4).join(", "), // buurt, stad, land
-    };
-  });
+  return rows
+    .map((f) => {
+      const p = f.properties ?? {};
+      const [lng, lat] = f.geometry?.coordinates ?? [];
+
+      // de naam van de zaak, of anders het straatadres
+      const label =
+        p.name ||
+        [p.street, p.housenumber].filter(Boolean).join(" ") ||
+        p.city ||
+        "Onbekend";
+
+      // context eronder: straat, buurt, plaats, land
+      const address = [
+        p.name ? [p.street, p.housenumber].filter(Boolean).join(" ") : null,
+        p.district,
+        p.city || p.town || p.village,
+        p.country,
+      ]
+        .filter(Boolean)
+        .join(", ");
+
+      return { lat, lng, label, address };
+    })
+    .filter((h) => Number.isFinite(h.lat) && Number.isFinite(h.lng));
 }
