@@ -105,6 +105,18 @@ gratis, geen sleutel). De fair-use-limiet is ongeveer één verzoek per seconde,
 vandaar de korte pauze tijdens het typen. Bij zwaar gebruik wil je een eigen
 instance of een andere provider.
 
+## Je data exporteren
+
+Onderin het zijpaneel staan **Exporteren** en **Importeren**. Exporteren geeft je
+één JSON-bestand met al je plekken en tags. Tags staan er op naam in, niet op id,
+zodat het bestand op zichzelf leesbaar is en niets van de database nodig heeft.
+
+Importeren voegt toe en overschrijft niets. Plekken die je al hebt (zelfde naam,
+zelfde plek) worden overgeslagen, dus je kunt hetzelfde bestand twee keer
+importeren zonder dubbelingen. Ontbrekende tags worden aangemaakt.
+
+Zo blijft je data van jou, ook als je ooit van Supabase af wil.
+
 ## Volgende stappen
 
 - Foto's bij een plek (Supabase Storage)

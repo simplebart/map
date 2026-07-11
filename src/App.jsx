@@ -24,6 +24,7 @@ export default function App() {
   const [flyTo, setFlyTo] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     if (configError) { setBooting(false); return; }
@@ -88,6 +89,7 @@ export default function App() {
       (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
         setFlyTo({ lat, lng, zoom: 16, key: Date.now() });
+        addHere({ lat, lng });
       },
       () => setError("Kon je locatie niet bepalen.")
     );
@@ -149,6 +151,8 @@ export default function App() {
         onCreateTag={addTag}
         onDeleteTag={removeTag}
         onAddPlace={openAdd}
+        onReload={() => load("both")}
+        onNotice={setNotice}
         onSignOut={() => supabase.auth.signOut()}
         email={session.user.email}
       />
@@ -177,6 +181,12 @@ export default function App() {
       {error && (
         <div className="toast" onClick={() => setError("")}>
           {error} <span className="toast-x">×</span>
+        </div>
+      )}
+
+      {notice && (
+        <div className="toast ok" onClick={() => setNotice("")}>
+          {notice} <span className="toast-x">×</span>
         </div>
       )}
     </div>

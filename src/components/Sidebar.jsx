@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { exportBackup, importBackup } from "../lib/backup";
 
 const SWATCHES = [
   "#d1495b", "#7b4bb7", "#c07d2a", "#2a6fb0",
@@ -20,6 +21,8 @@ export default function Sidebar({
   onCreateTag,
   onDeleteTag,
   onAddPlace,
+  onReload,
+  onNotice,
   onSignOut,
   email,
 }) {
@@ -27,6 +30,38 @@ export default function Sidebar({
   const [searching, setSearching] = useState(false);
   const [managing, setManaging] = useState(false);
   const [newTag, setNewTag] = useState({ name: "", emoji: "", color: SWATCHES[0] });
+  const [busy, setBusy] = useState("");
+  const fileRef = useRef(null);
+
+  async function doExport() {
+    setBusy("export");
+    try {
+      const n = await exportBackup();
+      onNotice?.(`${n} ${n === 1 ? "plek" : "plekken"} gedownload.`);
+    } catch (e) {
+      onNotice?.(e.message);
+    }
+    setBusy("");
+  }
+
+  async function doImport(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // zodat hetzelfde bestand opnieuw kan
+    if (!file) return;
+
+    setBusy("import");
+    try {
+      const r = await importBackup(file);
+      await onReload?.();
+      const bits = [`${r.added} toegevoegd`];
+      if (r.skipped) bits.push(`${r.skipped} al aanwezig`);
+      if (r.newTags) bits.push(`${r.newTags} nieuwe tags`);
+      onNotice?.(bits.join(", ") + ".");
+    } catch (err) {
+      onNotice?.(err.message);
+    }
+    setBusy("");
+  }
 
   const tagsById = Object.fromEntries(tags.map((t) => [t.id, t]));
 
@@ -204,6 +239,26 @@ export default function Sidebar({
             );
           })
         )}
+      </div>
+
+      <div className="side-foot">
+        <button className="linkish" onClick={doExport} disabled={busy === "export"}>
+          {busy === "export" ? "Bezig…" : "Exporteren"}
+        </button>
+        <button
+          className="linkish"
+          onClick={() => fileRef.current?.click()}
+          disabled={busy === "import"}
+        >
+          {busy === "import" ? "Bezig…" : "Importeren"}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          onChange={doImport}
+          hidden
+        />
       </div>
     </aside>
   );
