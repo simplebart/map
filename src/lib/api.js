@@ -116,7 +116,7 @@ export async function searchCity(query) {
 
 export async function searchAddress(query, limit = 6) {
   const r = await fetch(
-    `https://photon.komoot.io/api/?limit=${limit}&lang=nl&q=${encodeURIComponent(query)}`
+    `https://photon.komoot.io/api/?limit=${limit}&q=${encodeURIComponent(query)}`
   );
   const data = await r.json();
   const rows = data?.features ?? [];
