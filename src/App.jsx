@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase, configError } from "./lib/supabase";
 import {
   fetchPlaces, createPlace, deletePlace,
@@ -26,6 +26,7 @@ export default function App() {
   const [hoveredId, setHoveredId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [me, setMe] = useState(null);   // eigen locatie
+  const centeredOnce = useRef(false);   // kaart één keer naar je toe, daarna niet meer
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
