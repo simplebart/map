@@ -43,7 +43,7 @@ export default function MapView({
 
   // kaart eenmalig opzetten
   useEffect(() => {
-    const map = L.map(elRef.current, { zoomControl: true }).setView([52.0907, 5.1214], 13);
+    const map = L.map(elRef.current, { zoomControl: true }).setView([52.1, 5.3], 7);
     L.tileLayer(TILES, { attribution: ATTRIB, maxZoom: 19 }).addTo(map);
     mapRef.current = map;
 
