@@ -324,7 +324,7 @@ button.linkish {
 
 /* ── Telefoon ───────────────────────────────────────────────── */
 @media (max-width: 760px) {
-  .app { flex-direction: column; }
+  .app { flex-direction: column-reverse; }
 
   /* kaart bovenaan, vaste hoogte */
   .mapwrap {
