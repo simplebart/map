@@ -11,6 +11,9 @@
 * { box-sizing: border-box; }
 
 html, body, #root { height: 100%; margin: 0; }
+@supports (height: 100dvh) {
+  html, body, #root { height: 100dvh; }
+}
 
 body {
   font-family: "Sora", system-ui, -apple-system, sans-serif;
@@ -321,21 +324,37 @@ button.linkish {
 
 /* ── Telefoon ───────────────────────────────────────────────── */
 @media (max-width: 760px) {
-  .app { flex-direction: column-reverse; }
+  .app { flex-direction: column; }
 
+  /* kaart bovenaan, vaste hoogte */
+  .mapwrap {
+    flex: 0 0 auto;
+    height: 42vh;
+    min-height: 240px;
+  }
+
+  /* paneel eronder: neemt de rest en scrollt zelf */
   .side {
     width: 100%;
-    flex: 0 0 auto;
-    max-height: 48%;
+    flex: 1 1 auto;
+    min-height: 0;
     border-right: none;
     border-top: 1px solid var(--line);
+    overflow-y: auto;          /* het hele paneel scrollt */
   }
-  .mapwrap { flex: 1; min-height: 300px; }
-  .peek { display: none; } /* op touch is hover zinloos */
-  .sheet { left: 0; }
-  .sheet-grid { grid-template-columns: 1fr; }
+  .list {
+    flex: none;                /* niet meer zelf scrollen; de zijbalk doet dat */
+    overflow: visible;
+  }
+  .side-foot {
+    position: sticky;
+    bottom: 0;
+    background: var(--panel);
+  }
+
+  .peek { display: none; }     /* op touch bestaat hover niet */
   .row .del { opacity: 1; }
-  .locate { bottom: 16px; }
+  .locate { bottom: 14px; right: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -476,3 +495,83 @@ button.linkish {
 .side-foot button:disabled { opacity: 0.5; }
 
 .toast.ok { background: var(--deep); }
+
+/* ── Kaartje bij een aangetikte plek ────────────────────────── */
+.pcard {
+  position: absolute;
+  z-index: 680;
+  left: 16px;
+  bottom: 16px;
+  width: 270px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  box-shadow: 0 18px 44px -18px rgba(0, 0, 0, 0.45);
+  animation: pcardIn 0.18s ease both;
+}
+@keyframes pcardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pcard-x {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 19px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+.pcard-x:hover { color: var(--ink); opacity: 1; }
+
+.pcard-tag {
+  font-family: "DM Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.pcard h3 {
+  margin: 6px 0 3px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+  padding-right: 18px;
+}
+.pcard-addr { font-size: 12.5px; color: var(--muted); margin: 0 0 7px; }
+.pcard-note { font-size: 13.5px; margin: 0; line-height: 1.45; }
+.pcard-none { font-size: 13px; color: var(--muted); font-style: italic; margin: 0; }
+
+.pcard-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.pcard-route {
+  font-family: "DM Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--deep);
+  text-decoration: none;
+}
+.pcard-route:hover { text-decoration: underline; }
+.linkish.danger { color: var(--danger); }
+
+/* op de telefoon: als een sheet over de onderkant van de kaart */
+@media (max-width: 760px) {
+  .pcard {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    width: auto;
+  }
+}

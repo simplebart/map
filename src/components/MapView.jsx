@@ -29,6 +29,7 @@ export default function MapView({
   onMapClick,
   onViewChange,
   onHover,
+  onSelect,
   flyTo,
   hoveredId,
 }) {
@@ -76,13 +77,12 @@ export default function MapView({
         onHover?.(null);
       });
       m.on("click", (e) => {
-        L.DomEvent.stopPropagation(e);
-        map.flyTo([p.lat, p.lng], Math.max(map.getZoom(), 16), { duration: 0.7 });
-        showPeek(p, tag);
+        L.DomEvent.stopPropagation(e);   // geen "plek toevoegen" openen
+        onSelect?.(p.id);
       });
       markersRef.current.set(p.id, m);
     });
-  }, [places, tagsById, onHover]);
+  }, [places, tagsById, onHover, onSelect]);
 
   // peek tonen als de lijst hovert
   useEffect(() => {
