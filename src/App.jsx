@@ -200,7 +200,6 @@ export default function App() {
       <MapView
         places={filtered}
         tagsById={tagsById}
-        onMapClick={addHere}
         onViewChange={setBounds}
         onHover={setHoveredId}
         onSelect={setSelectedId}
