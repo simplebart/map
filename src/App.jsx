@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase, configError } from "./lib/supabase";
 import {
-  fetchPlaces, createPlace, deletePlace,
+  fetchPlaces, createPlace, updatePlace, deletePlace,
   fetchTags, createTag, deleteTag,
   subscribeToChanges, reverseGeocode, searchCity,
 } from "./lib/api";
@@ -141,6 +141,13 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
+  async function editPlace(id, patch) {
+    try {
+      await updatePlace(id, patch);
+      await load("places");
+    } catch (e) { setError(e.message); }
+  }
+
   async function removePlace(id) {
     if (id === selectedId) setSelectedId(null);
     setPlaces((ps) => ps.filter((p) => p.id !== id));
@@ -214,7 +221,9 @@ export default function App() {
         <PlaceCard
           place={selected}
           tag={tagsById[selected.tag_id]}
+          tags={tags}
           onClose={() => setSelectedId(null)}
+          onSave={editPlace}
           onDelete={(id) => { removePlace(id); setSelectedId(null); }}
         />
       )}

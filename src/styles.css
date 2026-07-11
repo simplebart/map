@@ -605,3 +605,31 @@ button.linkish {
 @media (prefers-reduced-motion: reduce) {
   .me-pulse { animation: none; opacity: 0; }
 }
+
+/* ── Kaartje: bewerkmodus ───────────────────────────────────── */
+.pcard-input {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: 9px;
+}
+.pcard-input:first-of-type { margin-top: 10px; }
+textarea.pcard-input { resize: vertical; min-height: 52px; }
+
+.pcard-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.pcard-edit-actions button {
+  flex: 1;
+  padding: 9px 12px;
+  font-size: 13.5px;
+}
+
+.pcard-foot-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
