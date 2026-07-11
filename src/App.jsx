@@ -26,7 +26,7 @@ export default function App() {
   const [hoveredId, setHoveredId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [me, setMe] = useState(null);   // eigen locatie
-  const centeredOnce = useRef(false);   // kaart één keer naar je toe, daarna niet meer
+  const centeredOnce = useRef(false);   // kaart maar één keer naar je toe
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -59,11 +59,19 @@ export default function App() {
   useEffect(() => {
     if (!session || !navigator.geolocation) return;
     const id = navigator.geolocation.watchPosition(
-      (pos) => setMe({
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        accuracy: pos.coords.accuracy,
-      }),
+      (pos) => {
+        const next = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+        setMe(next);
+        // alleen de allereerste meting brengt de kaart naar je toe
+        if (!centeredOnce.current) {
+          centeredOnce.current = true;
+          setFlyTo({ lat: next.lat, lng: next.lng, zoom: 14, key: Date.now() });
+        }
+      },
       () => setMe(null),          // geweigerd of mislukt: geen stip, verder geen drama
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
     );
