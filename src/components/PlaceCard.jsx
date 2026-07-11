@@ -98,7 +98,7 @@ export default function PlaceCard({ place, tag, tags, onClose, onDelete, onSave 
           <button className="linkish" onClick={() => setEditing(true)}>Bewerken</button>
           <a
             className="pcard-route"
-            href={`https://www.openstreetmap.org/directions?to=${place.lat},${place.lng}`}
+            href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`}
             target="_blank"
             rel="noreferrer"
           >
