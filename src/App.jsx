@@ -25,6 +25,7 @@ export default function App() {
   const [flyTo, setFlyTo] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
+  const [me, setMe] = useState(null);   // eigen locatie
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -51,6 +52,22 @@ export default function App() {
     if (!session?.user?.id) return;
     return subscribeToChanges(session.user.id, (what) => load(what));
   }, [session, load]);
+
+  // ── Eigen locatie volgen ────────────────────────────────────
+  // watchPosition i.p.v. getCurrentPosition: de stip loopt mee terwijl je wandelt.
+  useEffect(() => {
+    if (!session || !navigator.geolocation) return;
+    const id = navigator.geolocation.watchPosition(
+      (pos) => setMe({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+      }),
+      () => setMe(null),          // geweigerd of mislukt: geen stip, verder geen drama
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+    );
+    return () => navigator.geolocation.clearWatch(id);
+  }, [session]);
 
   const tagsById = useMemo(
     () => Object.fromEntries(tags.map((t) => [t.id, t])), [tags]);
@@ -89,13 +106,19 @@ export default function App() {
   }
 
   function locateMe() {
+    // de stip weet meestal al waar we zijn — dan meteen erheen
+    if (me) {
+      setFlyTo({ lat: me.lat, lng: me.lng, zoom: 16, key: Date.now() });
+      return;
+    }
     if (!navigator.geolocation) { setError("Deze browser kan je locatie niet bepalen."); return; }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
+        setMe({ lat, lng, accuracy: pos.coords.accuracy });
         setFlyTo({ lat, lng, zoom: 16, key: Date.now() });
       },
-      () => setError("Kon je locatie niet bepalen.")
+      () => setError("Kon je locatie niet bepalen. Sta je locatie toe in je browser?")
     );
   }
 
@@ -172,6 +195,7 @@ export default function App() {
         onViewChange={setBounds}
         onHover={setHoveredId}
         onSelect={setSelectedId}
+        me={me}
         flyTo={flyTo}
         hoveredId={hoveredId}
       />
