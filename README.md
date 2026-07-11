@@ -23,10 +23,14 @@ Parijse restaurants — niet die uit Utrecht.
 > sleutel alle plekken van alle gebruikers lezen. Het script zet ze aan — sla die
 > stap niet over.
 
-### Inloglinks laten werken
+### Inloggen met wachtwoord
 
-Onder **Authentication → URL Configuration**: zet je Site URL op je Vercel-domein
-en voeg `http://localhost:5173` toe aan de Redirect URLs, zodat inloggen ook lokaal werkt.
+Onder **Authentication → Providers → Email**: zet **Enable email provider** aan.
+
+Wil je meteen kunnen inloggen zonder eerst je mailadres te bevestigen, zet dan
+**Confirm email** uit. Handig als je de enige gebruiker bent. Laat je 'm aan, dan
+krijg je na registreren eerst een bevestigingsmail — en dan moet je Site URL onder
+**Authentication → URL Configuration** wél op je Vercel-domein staan.
 
 ## 2. Lokaal draaien
 
@@ -75,10 +79,10 @@ src/
   lib/supabase.js     client
   lib/api.js          alle CRUD + realtime + adres opzoeken
   components/
-    Auth.jsx          inloggen via magic link
+    Auth.jsx          inloggen en registreren met wachtwoord
     MapView.jsx       Leaflet-kaart, emoji-markers, hover-kaartje
     Sidebar.jsx       legenda/filter, lijst, tagbeheer
-    AddSheet.jsx      nieuwe plek opslaan
+    AddDialog.jsx     venster: adres zoeken, dan naam/tag/notitie
   App.jsx             sessie, data, realtime, filterlogica
 supabase/schema.sql   tabellen, RLS, starttags
 ```
@@ -91,15 +95,21 @@ beweging zijn `bounds` door.
 **Sync.** `subscribeToChanges` luistert op Postgres-wijzigingen in je eigen rijen.
 Voeg je op je telefoon iets toe, dan ververst je laptop vanzelf.
 
-**Adressen.** Bij het toevoegen wordt het adres automatisch opgezocht via
-Nominatim (OpenStreetMap, gratis, geen sleutel). Bij zwaar gebruik wil je daar een
-eigen instance of een andere provider voor — de gratis instance heeft een
-fair-use-limiet van ongeveer één verzoek per seconde.
+**Plek toevoegen.** Twee wegen naar hetzelfde venster: de knop **+ Plek toevoegen**
+(je zoekt een adres of naam op) of een tik op de kaart (locatie staat dan al vast,
+adres wordt erbij gezocht). Op de telefoon is de ⌖-knop het snelst: die pakt je
+huidige positie.
+
+**Adressen.** Zoeken en omgekeerd opzoeken gaat via Nominatim (OpenStreetMap,
+gratis, geen sleutel). De fair-use-limiet is ongeveer één verzoek per seconde,
+vandaar de korte pauze tijdens het typen. Bij zwaar gebruik wil je een eigen
+instance of een andere provider.
 
 ## Volgende stappen
 
 - Foto's bij een plek (Supabase Storage)
 - Plekken bewerken (nu alleen toevoegen en verwijderen)
+- Wachtwoord vergeten (`supabase.auth.resetPasswordForEmail`)
 - Een lijst delen met iemand anders
 - Zoeken op naam binnen je eigen plekken
 - Offline werken (service worker + cache)

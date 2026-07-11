@@ -3,10 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!url || !key) {
-  throw new Error(
-    "Supabase-gegevens ontbreken. Kopieer .env.example naar .env en vul VITE_SUPABASE_URL en VITE_SUPABASE_ANON_KEY in."
-  );
-}
+const looksValid = typeof url === "string" && /^https?:\/\//.test(url);
 
-export const supabase = createClient(url, key);
+export const configError = !looksValid || !key
+  ? "Supabase-gegevens ontbreken of kloppen niet. Zet VITE_SUPABASE_URL (inclusief https://) en VITE_SUPABASE_ANON_KEY in Vercel onder Settings → Environment Variables, en deploy opnieuw."
+  : null;
+
+export const supabase = configError ? null : createClient(url, key);

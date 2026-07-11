@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "./lib/supabase";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { supabase, configError } from "./lib/supabase";
 import {
   fetchPlaces, createPlace, deletePlace,
   fetchTags, createTag, deleteTag,
@@ -8,7 +8,7 @@ import {
 import Auth from "./components/Auth";
 import MapView from "./components/MapView";
 import Sidebar from "./components/Sidebar";
-import AddSheet from "./components/AddSheet";
+import AddDialog from "./components/AddDialog";
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -16,15 +16,17 @@ export default function App() {
 
   const [places, setPlaces] = useState([]);
   const [tags, setTags] = useState([]);
-  const [active, setActive] = useState(new Set());   // gefilterde tag-ids
-  const [bounds, setBounds] = useState(null);        // huidig kaartbeeld
-  const [pending, setPending] = useState(null);      // nieuwe plek in de maak
+  const [active, setActive] = useState(new Set());
+  const [bounds, setBounds] = useState(null);
+
+  const [adding, setAdding] = useState(false);
+  const [preset, setPreset] = useState(null);
   const [flyTo, setFlyTo] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
   const [error, setError] = useState("");
 
-  // ── Sessie ──────────────────────────────────────────────────
   useEffect(() => {
+    if (configError) { setBooting(false); return; }
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setBooting(false);
@@ -33,54 +35,37 @@ export default function App() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  // ── Data laden ──────────────────────────────────────────────
   const load = useCallback(async (what = "both") => {
     try {
       if (what === "both" || what === "tags") setTags(await fetchTags());
       if (what === "both" || what === "places") setPlaces(await fetchPlaces());
-    } catch (e) {
-      setError(e.message);
-    }
+    } catch (e) { setError(e.message); }
   }, []);
 
-  useEffect(() => {
-    if (!session) return;
-    load("both");
-  }, [session, load]);
+  useEffect(() => { if (session) load("both"); }, [session, load]);
 
-  // ── Realtime: telefoon ↔ laptop ─────────────────────────────
   useEffect(() => {
     if (!session?.user?.id) return;
-    const unsub = subscribeToChanges(session.user.id, (what) => load(what));
-    return unsub;
+    return subscribeToChanges(session.user.id, (what) => load(what));
   }, [session, load]);
 
-  // ── Afgeleide data ──────────────────────────────────────────
   const tagsById = useMemo(
-    () => Object.fromEntries(tags.map((t) => [t.id, t])),
-    [tags]
-  );
+    () => Object.fromEntries(tags.map((t) => [t.id, t])), [tags]);
 
   const inViewIds = useMemo(() => {
     if (!bounds) return new Set(places.map((p) => p.id));
-    return new Set(
-      places.filter((p) => bounds.contains([p.lat, p.lng])).map((p) => p.id)
-    );
+    return new Set(places.filter((p) => bounds.contains([p.lat, p.lng])).map((p) => p.id));
   }, [places, bounds]);
 
-  // markers: alles dat door het tagfilter komt (ook buiten beeld)
+  // markers: alles dat door het tagfilter komt
   const filtered = useMemo(
     () => (active.size === 0 ? places : places.filter((p) => active.has(p.tag_id))),
-    [places, active]
-  );
+    [places, active]);
 
   // lijst: door het filter én in het kaartbeeld
   const visible = useMemo(
-    () => filtered.filter((p) => inViewIds.has(p.id)),
-    [filtered, inViewIds]
-  );
+    () => filtered.filter((p) => inViewIds.has(p.id)), [filtered, inViewIds]);
 
-  // ── Acties ──────────────────────────────────────────────────
   const toggleTag = (id) =>
     setActive((prev) => {
       const next = new Set(prev);
@@ -88,53 +73,54 @@ export default function App() {
       return next;
     });
 
-  async function handleMapClick({ lat, lng }) {
-    setPending({ lat, lng, address: "" });
+  function openAdd() { setPreset(null); setAdding(true); }
+
+  async function addHere({ lat, lng }) {
+    setPreset({ lat, lng, address: "" });
+    setAdding(true);
     const address = await reverseGeocode(lat, lng);
-    setPending((p) => (p && p.lat === lat ? { ...p, address } : p));
+    setPreset((p) => (p && p.lat === lat ? { ...p, address } : p));
+  }
+
+  function locateMe() {
+    if (!navigator.geolocation) { setError("Deze browser kan je locatie niet bepalen."); return; }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        setFlyTo({ lat, lng, zoom: 16, key: Date.now() });
+        addHere({ lat, lng });
+      },
+      () => setError("Kon je locatie niet bepalen.")
+    );
   }
 
   async function savePlace(form) {
     try {
-      await createPlace({ ...form, lat: pending.lat, lng: pending.lng });
-      setPending(null);
+      await createPlace(form);
+      setAdding(false);
+      setPreset(null);
+      setFlyTo({ lat: form.lat, lng: form.lng, zoom: 16, key: Date.now() });
       await load("places");
-    } catch (e) {
-      setError(e.message);
-    }
+    } catch (e) { setError(e.message); }
   }
 
   async function removePlace(id) {
-    setPlaces((ps) => ps.filter((p) => p.id !== id)); // meteen weg in de UI
-    try {
-      await deletePlace(id);
-    } catch (e) {
-      setError(e.message);
-      load("places");
-    }
+    setPlaces((ps) => ps.filter((p) => p.id !== id));
+    try { await deletePlace(id); }
+    catch (e) { setError(e.message); load("places"); }
   }
 
   async function addTag(t) {
-    try {
-      await createTag(t);
-      await load("tags");
-    } catch (e) {
-      setError(e.message);
-    }
+    try { await createTag(t); await load("tags"); }
+    catch (e) { setError(e.message); }
   }
 
   async function removeTag(id) {
     try {
       await deleteTag(id);
-      setActive((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      await load("both"); // plekken verliezen hun tag_id
-    } catch (e) {
-      setError(e.message);
-    }
+      setActive((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      await load("both");
+    } catch (e) { setError(e.message); }
   }
 
   async function goToCity(q) {
@@ -143,20 +129,7 @@ export default function App() {
     else setError(`Geen plaats gevonden voor "${q}".`);
   }
 
-  // "waar ik nu ben" — op de telefoon de snelste manier om iets toe te voegen
-  function locateMe() {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        setFlyTo({ lat, lng, zoom: 16, key: Date.now() });
-        handleMapClick({ lat, lng });
-      },
-      () => setError("Kon je locatie niet bepalen.")
-    );
-  }
-
-  // ── Render ──────────────────────────────────────────────────
+  if (configError) return <div className="boot">{configError}</div>;
   if (booting) return <div className="boot">Even laden…</div>;
   if (!session) return <Auth />;
 
@@ -176,6 +149,7 @@ export default function App() {
         onHoverPlace={setHoveredId}
         onCreateTag={addTag}
         onDeleteTag={removeTag}
+        onAddPlace={openAdd}
         onSignOut={() => supabase.auth.signOut()}
         email={session.user.email}
       />
@@ -183,23 +157,21 @@ export default function App() {
       <MapView
         places={filtered}
         tagsById={tagsById}
-        onMapClick={handleMapClick}
+        onMapClick={addHere}
         onViewChange={setBounds}
         onHover={setHoveredId}
         flyTo={flyTo}
         hoveredId={hoveredId}
       />
 
-      <button className="locate" onClick={locateMe} title="Voeg toe waar ik nu ben">
-        ⌖
-      </button>
+      <button className="locate" onClick={locateMe} title="Voeg toe waar ik nu ben">⌖</button>
 
-      {pending && (
-        <AddSheet
-          pending={pending}
+      {adding && (
+        <AddDialog
+          preset={preset}
           tags={tags}
           onSave={savePlace}
-          onCancel={() => setPending(null)}
+          onCancel={() => { setAdding(false); setPreset(null); }}
         />
       )}
 

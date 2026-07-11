@@ -109,3 +109,25 @@ export async function searchCity(query) {
   if (!d?.[0]) return null;
   return { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
 }
+
+// ── Adres zoeken: naam of adres → lijst met locaties ──────────
+// Nominatim is gratis en zonder sleutel. Fair use: ~1 verzoek per seconde,
+// vandaar de pauze tijdens het typen in AddDialog.
+
+export async function searchAddress(query, limit = 6) {
+  const r = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=${limit}&q=${encodeURIComponent(query)}`
+  );
+  const rows = await r.json();
+  if (!Array.isArray(rows)) return [];
+
+  return rows.map((row) => {
+    const parts = String(row.display_name).split(",").map((s) => s.trim());
+    return {
+      lat: parseFloat(row.lat),
+      lng: parseFloat(row.lon),
+      label: parts[0],                       // "Le Baratin" of "Oudegracht 12"
+      address: parts.slice(1, 4).join(", "), // buurt, stad, land
+    };
+  });
+}

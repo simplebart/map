@@ -19,6 +19,7 @@ export default function Sidebar({
   onHoverPlace,
   onCreateTag,
   onDeleteTag,
+  onAddPlace,
   onSignOut,
   email,
 }) {
@@ -55,25 +56,31 @@ export default function Sidebar({
   return (
     <aside className="side">
       <div className="brand">
-        <div>
+        <div className="brand-name">
+          <span className="brand-mark">📍</span>
           <h1>Mijn plekken</h1>
-          <p>Tik op de kaart om er een toe te voegen.</p>
         </div>
         <button className="linkish" onClick={onSignOut} title={email}>
           Uitloggen
         </button>
       </div>
 
-      <form className="search" onSubmit={submitCity}>
-        <input
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          placeholder="Zoek een stad, bijv. Parijs"
-        />
-        <button type="submit" disabled={searching}>
-          {searching ? "…" : "Ga"}
+      <div className="top-actions">
+        <button className="add-place" onClick={onAddPlace}>
+          + Plek toevoegen
         </button>
-      </form>
+
+        <form className="search" onSubmit={submitCity}>
+          <input
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="Ga naar een stad, bijv. Parijs"
+          />
+          <button type="submit" className="ghost" disabled={searching}>
+            {searching ? "…" : "Ga"}
+          </button>
+        </form>
+      </div>
 
       <div className="legend">
         <div className="legend-head">
