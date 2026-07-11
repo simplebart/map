@@ -27,6 +27,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState(null);
   const [me, setMe] = useState(null);   // eigen locatie
   const centeredOnce = useRef(false);   // kaart maar één keer naar je toe
+  const [sheet, setSheet] = useState("half");   // 'dicht' | 'half' | 'open' (mobiel)
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -174,6 +175,45 @@ export default function App() {
     else setError(`Geen plaats gevonden voor "${q}".`);
   }
 
+  // ── Paneel omhoog/omlaag vegen (alleen mobiel) ──────────────
+  // Vegen naar beneden = kaart groter. Naar boven = lijst zien.
+  const STANDEN = ["dicht", "half", "open"];
+
+  function dragSheet(e) {
+    const startY = e.clientY;
+    const startIx = STANDEN.indexOf(sheet);
+    let laatste = sheet;
+
+    const target = e.currentTarget;
+    target.setPointerCapture?.(e.pointerId);
+
+    const beweeg = (ev) => {
+      const dy = ev.clientY - startY;
+      if (Math.abs(dy) < 40) return;              // kleine trilling negeren
+      const stappen = Math.round(dy / 90);        // ~90px per stand
+      const ix = Math.min(2, Math.max(0, startIx - stappen));
+      const stand = STANDEN[ix];
+      if (stand !== laatste) {
+        laatste = stand;
+        setSheet(stand);
+      }
+    };
+
+    const stop = () => {
+      target.releasePointerCapture?.(e.pointerId);
+      window.removeEventListener("pointermove", beweeg);
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+    };
+
+    window.addEventListener("pointermove", beweeg);
+    window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
+  }
+
+  // tikken op het handvat: heen en weer tussen dicht en half
+  const tapSheet = () => setSheet((s) => (s === "dicht" ? "half" : "dicht"));
+
   if (configError) return <div className="boot">{configError}</div>;
   if (booting) return <div className="boot">Even laden…</div>;
   if (!session) return <Auth />;
@@ -200,6 +240,9 @@ export default function App() {
         onAddPlace={openAdd}
         onReload={() => load("both")}
         onNotice={setNotice}
+        sheet={sheet}
+        onSheetDrag={dragSheet}
+        onSheetTap={tapSheet}
         onSignOut={() => supabase.auth.signOut()}
         email={session.user.email}
       />

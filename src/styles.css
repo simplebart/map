@@ -71,6 +71,8 @@ button.linkish {
   font-weight: 500;
 }
 
+.grip { display: none; }
+
 .boot {
   display: grid;
   place-items: center;
@@ -324,37 +326,77 @@ button.linkish {
 
 /* ── Telefoon ───────────────────────────────────────────────── */
 @media (max-width: 760px) {
-  .app { flex-direction: column-reverse; }
+  /* de kaart vult het scherm; het paneel schuift er als een vel overheen */
+  .app { display: block; position: relative; height: 100%; }
 
-  /* kaart bovenaan, vaste hoogte */
   .mapwrap {
-    flex: 0 0 auto;
-    height: 42vh;
-    min-height: 240px;
+    position: absolute;
+    inset: 0;
+    height: 100%;
   }
 
-  /* paneel eronder: neemt de rest en scrollt zelf */
   .side {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
+    height: 88%;                 /* zo hoog kan het worden */
     border-right: none;
     border-top: 1px solid var(--line);
-    overflow-y: auto;          /* het hele paneel scrollt */
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -12px 40px -18px rgba(0, 0, 0, 0.35);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    z-index: 700;
   }
-  .list {
-    flex: none;                /* niet meer zelf scrollen; de zijbalk doet dat */
-    overflow: visible;
+
+  /* de drie standen — hoe ver het vel omlaag is geschoven */
+  .side.sheet-open  { transform: translateY(0); }
+  .side.sheet-half  { transform: translateY(52%); }
+  .side.sheet-dicht { transform: translateY(calc(100% - 62px)); }
+
+  /* in de lage standen mag het vel niet zelf scrollen, anders vecht het
+     met het slepen */
+  .side.sheet-half,
+  .side.sheet-dicht { overflow: hidden; }
+
+  /* handvat om te slepen */
+  .grip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    cursor: grab;
+    touch-action: none;          /* zodat de browser niet zelf gaat scrollen */
+    position: sticky;
+    top: 0;
+    background: var(--panel);
+    border-radius: 18px 18px 0 0;
+    z-index: 2;
   }
+  .grip:active { cursor: grabbing; }
+  .grip-bar {
+    width: 40px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--line);
+  }
+
   .side-foot {
     position: sticky;
     bottom: 0;
     background: var(--panel);
   }
 
-  .peek { display: none; }     /* op touch bestaat hover niet */
+  .peek { display: none; }
   .row .del { opacity: 1; }
-  .locate { bottom: 14px; right: 14px; }
+
+  /* knoppen boven het vel houden */
+  .locate { bottom: auto; top: 14px; right: 14px; }
+  .pcard { bottom: auto; top: 62px; }
+}
 }
 
 @media (prefers-reduced-motion: reduce) {

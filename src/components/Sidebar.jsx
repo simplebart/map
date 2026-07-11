@@ -23,6 +23,9 @@ export default function Sidebar({
   onAddPlace,
   onReload,
   onNotice,
+  sheet,          // 'dicht' | 'half' | 'open' (alleen mobiel)
+  onSheetDrag,
+  onSheetTap,
   onSignOut,
   email,
 }) {
@@ -89,7 +92,17 @@ export default function Sidebar({
     : "Alles in beeld";
 
   return (
-    <aside className="side">
+    <aside className={`side sheet-${sheet}`}>
+      <div
+        className="grip"
+        onPointerDown={onSheetDrag}
+        onClick={onSheetTap}
+        role="button"
+        aria-label="Paneel omhoog of omlaag slepen"
+      >
+        <span className="grip-bar" />
+      </div>
+
       <div className="brand">
         <div className="brand-name">
           <span className="brand-mark">📍</span>
